@@ -1,0 +1,182 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>초보 어휘력 퀴즈</title>
+  <style>
+    * { box-sizing: border-box; }
+    body {
+      margin: 0;
+      min-height: 100vh;
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      padding: 20px;
+      background: #f2f5ff;
+      color: #222;
+      font-family: "Malgun Gothic", sans-serif;
+      word-break: keep-all;
+    }
+    main {
+      width: 100%;
+      max-width: 480px;
+      padding: 28px;
+      background: #fff;
+      border-radius: 16px;
+      box-shadow: 0 4px 20px rgba(0, 0, 0, 0.08);
+    }
+    h1 { margin: 0 0 8px; font-size: 24px; text-align: center; }
+    h2 { font-size: 19px; line-height: 1.6; }
+    #progress { margin: 0; text-align: center; color: #666; }
+    button {
+      width: 100%;
+      margin-top: 10px;
+      padding: 14px;
+      border: 2px solid #d5dbee;
+      border-radius: 10px;
+      background: #fff;
+      color: #222;
+      font: inherit;
+      cursor: pointer;
+    }
+    button:hover:enabled { border-color: #4c6ef5; }
+    button:disabled { cursor: default; }
+    button.correct { border-color: #2b8a3e; background: #ebfbee; }
+    button.wrong { border-color: #c92a2a; background: #fff0f0; }
+    #next { border-color: #4c6ef5; background: #4c6ef5; color: #fff; }
+    #feedback { margin: 18px 0 0; line-height: 1.7; }
+    #score { font-size: 40px; text-align: center; margin: 24px 0 8px; }
+    #message { text-align: center; }
+    [hidden] { display: none; }
+  </style>
+</head>
+<body>
+  <main>
+    <h1>📚 초보 어휘력 퀴즈</h1>
+    <p id="progress"></p>
+
+    <section id="quiz">
+      <h2 id="question"></h2>
+      <div id="choices"></div>
+      <p id="feedback" aria-live="polite"></p>
+      <button id="next" type="button" hidden></button>
+    </section>
+
+    <section id="result" hidden>
+      <p id="score"></p>
+      <p id="message"></p>
+      <button id="restart" type="button">다시 풀기</button>
+    </section>
+  </main>
+
+  <script>
+    // 문제를 바꾸고 싶으면 이 목록만 고치면 돼요.
+    // answer는 정답의 순서예요. (첫 번째 보기가 0)
+    const questions = [
+      {
+        question: "'기우'의 뜻으로 알맞은 것은?",
+        choices: ["뜻밖의 행운", "쓸데없는 걱정", "오래된 친구", "빠른 성장"],
+        answer: 1,
+        explain: "'기우'는 앞일에 대한 쓸데없는 걱정을 뜻해요."
+      },
+      {
+        question: "\"약속 시간이 □□ 다가왔다.\"에서 '곧바로, 얼마 지나지 않아'를 뜻하는 말은?",
+        choices: ["금세", "한참", "이따금", "여태"],
+        answer: 0,
+        explain: "'금세'는 '지금 바로'를 뜻해요. '금시에'가 줄어든 말이라 '금새'가 아니라 '금세'로 써요."
+      },
+      {
+        question: "'꾸준히'와 뜻이 가장 비슷한 말은?",
+        choices: ["갑자기", "가끔", "한결같이", "대충"],
+        answer: 2,
+        explain: "'한결같이'는 처음부터 끝까지 변함없다는 뜻이에요."
+      },
+      {
+        question: "'겸손'과 뜻이 반대인 말은?",
+        choices: ["친절", "정직", "성실", "거만"],
+        answer: 3,
+        explain: "'거만'은 잘난 체하며 남을 업신여기는 태도예요."
+      },
+      {
+        question: "\"친구의 따뜻한 말 한마디가 큰 □□가 되었다.\" 빈칸에 알맞은 말은?",
+        choices: ["방해", "위로", "낭비", "피해"],
+        answer: 1,
+        explain: "'위로'는 따뜻한 말이나 행동으로 괴로움이나 슬픔을 달래 주는 것이에요."
+      }
+    ];
+
+    const $ = (id) => document.getElementById(id);
+    let current = 0;
+    let score = 0;
+
+    function showQuestion() {
+      const item = questions[current];
+      $("progress").textContent = `${current + 1} / ${questions.length} 문제`;
+      $("question").textContent = item.question;
+      $("feedback").textContent = "";
+      $("next").hidden = true;
+      $("choices").replaceChildren();
+
+      item.choices.forEach((text, index) => {
+        const button = document.createElement("button");
+        button.type = "button";
+        button.textContent = text;
+        button.addEventListener("click", () => checkAnswer(index));
+        $("choices").appendChild(button);
+      });
+    }
+
+    function checkAnswer(picked) {
+      const item = questions[current];
+      const buttons = $("choices").children;
+
+      for (const button of buttons) button.disabled = true;
+
+      buttons[item.answer].classList.add("correct");
+      buttons[item.answer].textContent += " ✅";
+
+      let result = "정답이에요! 🎉";
+      if (picked === item.answer) {
+        score++;
+      } else {
+        buttons[picked].classList.add("wrong");
+        buttons[picked].textContent += " ❌";
+        result = "아쉬워요! 😅";
+      }
+
+      $("feedback").textContent = `${result} ${item.explain}`;
+      $("next").textContent = current === questions.length - 1 ? "결과 보기" : "다음 문제";
+      $("next").hidden = false;
+    }
+
+    function showResult() {
+      $("quiz").hidden = true;
+      $("result").hidden = false;
+      $("progress").textContent = "퀴즈 완료";
+      $("score").textContent = `${score} / ${questions.length}`;
+
+      let message = "괜찮아요. 한 번 더 풀어 볼까요? 🌱";
+      if (score === questions.length) message = "모두 맞혔어요! 훌륭해요! 🏆";
+      else if (score >= 3) message = "잘했어요! 조금만 더 하면 만점이에요! 👍";
+      $("message").textContent = message;
+    }
+
+    $("next").addEventListener("click", () => {
+      current++;
+      if (current < questions.length) showQuestion();
+      else showResult();
+    });
+
+    $("restart").addEventListener("click", () => {
+      current = 0;
+      score = 0;
+      $("result").hidden = true;
+      $("quiz").hidden = false;
+      showQuestion();
+    });
+
+    showQuestion();
+  </script>
+</body>
+</html>
